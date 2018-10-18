@@ -13,14 +13,10 @@
 
 package org.apache.hadoop.dynamodb;
 
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_MAX_BATCH_SIZE;
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_MAX_ITEMS_PER_BATCH;
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_MAX_ITEM_SIZE;
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.MAX_BATCH_SIZE;
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.MAX_ITEMS_PER_BATCH;
-import static org.apache.hadoop.dynamodb.DynamoDBConstants.MAX_ITEM_SIZE;
+import static org.apache.hadoop.dynamodb.DynamoDBConstants.*;
 import static org.apache.hadoop.dynamodb.DynamoDBUtil.getDynamoDBEndpoint;
 
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -34,21 +30,6 @@ import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
-import com.amazonaws.services.dynamodbv2.model.PutRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TableDescription;
-import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,6 +72,7 @@ public class DynamoDBClient {
   private final Configuration config;
   private final long maxBatchSize;
   private final long maxItemByteSize;
+  private final boolean deletionMode;
 
   // For unit testing only
   public DynamoDBClient() {
@@ -98,6 +80,7 @@ public class DynamoDBClient {
     config = null;
     maxBatchSize = DEFAULT_MAX_BATCH_SIZE;
     maxItemByteSize = DEFAULT_MAX_ITEM_SIZE;
+    deletionMode = DEFAULT_DELETION_MODE;
   }
 
   public DynamoDBClient(Configuration conf) {
@@ -111,6 +94,7 @@ public class DynamoDBClient {
     dynamoDB.setEndpoint(getDynamoDBEndpoint(conf, region));
     maxBatchSize = config.getLong(MAX_BATCH_SIZE, DEFAULT_MAX_BATCH_SIZE);
     maxItemByteSize = config.getLong(MAX_ITEM_SIZE, DEFAULT_MAX_ITEM_SIZE);
+    deletionMode = config.getBoolean(DELETION_MODE, DEFAULT_DELETION_MODE);
   }
 
   public TableDescription describeTable(String tableName) {
@@ -210,7 +194,14 @@ public class DynamoDBClient {
     } else {
       writeBatchList = writeBatchMap.get(tableName);
     }
-    writeBatchList.add(new WriteRequest().withPutRequest(new PutRequest().withItem(item)));
+
+    log.info("Current mode is: " + this.deletionMode);
+    if (this.deletionMode) {
+      writeBatchList.add(new WriteRequest().withDeleteRequest(new DeleteRequest().withKey(item)));
+    } else {
+      writeBatchList.add(new WriteRequest().withPutRequest(new PutRequest().withItem(item)));
+    }
+
     writeBatchMapSizeBytes += itemSizeBytes;
 
     return result;

@@ -14,6 +14,7 @@
 package org.apache.hadoop.dynamodb;
 
 import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_MAX_ITEM_SIZE;
+import static org.apache.hadoop.dynamodb.DynamoDBConstants.DELETION_MODE;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -178,6 +179,16 @@ public class DynamoDBClientTest {
   public void testPutBatchDoesNotThrowWhenItemIsNotTooLarge() throws Exception {
     Map<String, AttributeValue> item = ImmutableMap.of("",
         new AttributeValue(Strings.repeat("a", (int) DEFAULT_MAX_ITEM_SIZE)));
+    client.putBatch("dummyTable", item, 1, null);
+  }
+
+  @Test
+  public void testPutBatchDeleteDoesNotThrowWhenItemIsNotTooLarge() throws Exception {
+    Map<String, AttributeValue> item = ImmutableMap.of("",
+            new AttributeValue(Strings.repeat("a", (int) DEFAULT_MAX_ITEM_SIZE)));
+
+    conf.set(DELETION_MODE, "true");
+    client = new DynamoDBClient(conf);
     client.putBatch("dummyTable", item, 1, null);
   }
 

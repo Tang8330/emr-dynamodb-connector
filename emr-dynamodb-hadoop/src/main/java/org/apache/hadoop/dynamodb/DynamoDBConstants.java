@@ -69,6 +69,9 @@ public interface DynamoDBConstants {
 
   double READ_EVENTUALLY_TO_STRONGLY_CONSISTENT_FACTOR = 2;
 
+  String DELETION_MODE = "dynamodb.deletion.mode";
+  boolean DEFAULT_DELETION_MODE = false;
+
   String SCAN_SEGMENTS = "dynamodb.scan.segments";
   int MAX_SCAN_SEGMENTS = 1000000;
   int MIN_SCAN_SEGMENTS = 1;
