@@ -58,6 +58,9 @@ public interface DynamoDBConstants {
   String MAX_MAP_TASKS = "dynamodb.max.map.tasks";
   String DEFAULT_THROUGHPUT_PERCENTAGE = "0.5";
 
+  String DELETION_MODE = "dynamodb.deletion.mode";
+  boolean DEFAULT_DELETION_MODE = false;
+
   double READ_EVENTUALLY_TO_STRONGLY_CONSISTENT_FACTOR = 2;
 
   String SCAN_SEGMENTS = "dynamodb.scan.segments";

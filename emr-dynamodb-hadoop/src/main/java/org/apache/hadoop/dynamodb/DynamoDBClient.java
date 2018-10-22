@@ -15,6 +15,7 @@ package org.apache.hadoop.dynamodb;
 
 import static org.apache.hadoop.dynamodb.DynamoDBUtil.getDynamoDBEndpoint;
 
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
@@ -27,21 +28,6 @@ import com.amazonaws.auth.AWSCredentialsProviderChain;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
-import com.amazonaws.services.dynamodbv2.model.Condition;
-import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
-import com.amazonaws.services.dynamodbv2.model.PutRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TableDescription;
-import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,12 +39,8 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.joda.time.Duration;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.concurrent.Callable;
 
 public class DynamoDBClient {
@@ -83,6 +65,7 @@ public class DynamoDBClient {
   private final AmazonDynamoDBClient dynamoDB;
   private int writeBatchMapSizeBytes;
   private int batchWriteRetries;
+
 
   // For unit testing only
   public DynamoDBClient() {
@@ -165,9 +148,10 @@ public class DynamoDBClient {
     return retryResult;
   }
 
-  public BatchWriteItemResult putBatch(String tableName, Map<String, AttributeValue> item,
+  public BatchWriteItemResult putBatch(String tableName, boolean deletionMode, Map<String, AttributeValue> item,
       long maxBatchSize, Reporter reporter)
       throws UnsupportedEncodingException {
+
     int itemSizeBytes = DynamoDBUtil.getItemSizeBytes(item);
     if (itemSizeBytes > MAX_ALLOWABLE_BYTE_SIZE) {
       throw new RuntimeException("Cannot pass items with size greater than "
@@ -195,7 +179,13 @@ public class DynamoDBClient {
     } else {
       writeBatchList = writeBatchMap.get(tableName);
     }
-    writeBatchList.add(new WriteRequest().withPutRequest(new PutRequest().withItem(item)));
+
+    if (deletionMode) {
+      writeBatchList.add(new WriteRequest().withDeleteRequest(new DeleteRequest().withKey(item)));
+    } else {
+      writeBatchList.add(new WriteRequest().withPutRequest(new PutRequest().withItem(item)));
+    }
+
     writeBatchMapSizeBytes += itemSizeBytes;
 
     return result;

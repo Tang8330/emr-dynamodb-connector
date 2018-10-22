@@ -14,6 +14,7 @@
 package org.apache.hadoop.dynamodb.write;
 
 import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_AVERAGE_ITEM_SIZE_IN_BYTES;
+import static org.apache.hadoop.dynamodb.DynamoDBConstants.DEFAULT_DELETION_MODE;
 import static org.apache.hadoop.dynamodb.DynamoDBUtil.createJobClient;
 
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
@@ -68,15 +69,19 @@ public abstract class AbstractDynamoDBRecordWriter<K, V> implements RecordWriter
   private long totolItemsWritten = 0;
   private double totalIOPSConsumed = 0;
   private long writesPerSecond = 0;
+  private boolean deletionMode;
 
   public AbstractDynamoDBRecordWriter(JobConf jobConf, Progressable progressable) {
     this.progressable = progressable;
 
     client = new DynamoDBClient(jobConf);
     tableName = jobConf.get(DynamoDBConstants.OUTPUT_TABLE_NAME);
+    log.info("#### AbstractDynamoDBRecordWriter robin");
     if (tableName == null) {
       throw new ResourceNotFoundException("No output table name was specified.");
     }
+
+    deletionMode = jobConf.getBoolean(DynamoDBConstants.DELETION_MODE, DEFAULT_DELETION_MODE);
 
     IopsCalculator iopsCalculator = new WriteIopsCalculator(createJobClient(jobConf), client,
         tableName);
@@ -105,7 +110,7 @@ public abstract class AbstractDynamoDBRecordWriter<K, V> implements RecordWriter
     }
 
     DynamoDBItemWritable item = convertValueToDynamoDBItem(key, value);
-    BatchWriteItemResult result = client.putBatch(tableName, item.getItem(),
+    BatchWriteItemResult result = client.putBatch(tableName, deletionMode, item.getItem(),
         permissibleWritesPerSecond - writesPerSecond, reporter);
 
     batchSize++;

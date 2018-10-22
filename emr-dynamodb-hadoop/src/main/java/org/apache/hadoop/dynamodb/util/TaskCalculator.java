@@ -15,6 +15,7 @@ package org.apache.hadoop.dynamodb.util;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.dynamodb.DynamoDBConstants;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.MRJobConfig;
@@ -41,6 +42,7 @@ public class TaskCalculator {
     // Total number of nodes in the cluster
     int nodes = jobClient.getClusterStatus().getTaskTrackers();
     log.info("Cluster has " + nodes + " active nodes.");
+    log.info("### DynamoDB Debug: " + conf.getBoolean(DynamoDBConstants.DELETION_MODE, DynamoDBConstants.DEFAULT_DELETION_MODE));
     if (nodes == 0) {
       log.warn("Cluster doesn't have any nodes");
       return 0;

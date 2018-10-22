@@ -13,6 +13,8 @@
 
 package org.apache.hadoop.dynamodb.write;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.dynamodb.DynamoDBItemWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
@@ -22,9 +24,11 @@ import java.io.IOException;
 
 public class DefaultDynamoDBRecordWriter extends AbstractDynamoDBRecordWriter<Text,
     DynamoDBItemWritable> {
+  private static final Log log = LogFactory.getLog(DefaultDynamoDBRecordWriter.class);
 
   public DefaultDynamoDBRecordWriter(JobConf jobConf, Progressable progress) throws IOException {
     super(jobConf, progress);
+    log.info("### DefaultDynamoDBRecordWriter");
   }
 
   @Override

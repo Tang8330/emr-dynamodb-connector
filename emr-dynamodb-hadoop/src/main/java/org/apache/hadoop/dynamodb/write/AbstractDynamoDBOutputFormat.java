@@ -13,6 +13,8 @@
 
 package org.apache.hadoop.dynamodb.write;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputFormat;
@@ -20,8 +22,10 @@ import org.apache.hadoop.mapred.OutputFormat;
 import java.io.IOException;
 
 public abstract class AbstractDynamoDBOutputFormat<K, V> implements OutputFormat<K, V> {
+  private static final Log log = LogFactory.getLog(AbstractDynamoDBOutputFormat.class);
 
   @Override
   public void checkOutputSpecs(FileSystem arg0, JobConf arg1) throws IOException {
+    log.info("### AbstractDynamoDBOutputFormat");
   }
 }
